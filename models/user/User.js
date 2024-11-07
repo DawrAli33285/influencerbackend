@@ -57,6 +57,9 @@ ref:'issuerr',
     payment_method:{
         type:String,
         enum:['STRIPE','PAYPAL','GOOGLE_PAY'],
+    },
+    avatar:{
+        type:String
     }
 
 },{

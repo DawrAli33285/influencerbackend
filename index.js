@@ -14,6 +14,7 @@ const offersRoutes=require('./routes/buyer/offers/offers')
 const bondsRoutes=require('./routes/buyer/bonds/bonds')
 const buyerPaymentRoutes=require('./routes/buyer/payment/payment')
 const adminUserRoutes=require('./routes/admin/user/user')
+const adminBondsRoutes=require('./routes/admin/bond/bond')
 //middlewares
 env.config()
 app.use(cors({
@@ -22,6 +23,7 @@ app.use(cors({
 }))
 app.use(express.json())
 app.use('/issuerPhotos', express.static(path.join(__dirname, 'issuerPhotos')));
+app.use('/avatar', express.static(path.join(__dirname, 'avatar')));
 
 
 //routes
@@ -39,6 +41,7 @@ app.use(offersRoutes)
 app.use(bondsRoutes)
 app.use(buyerPaymentRoutes)
 app.use("/admin",adminUserRoutes)
+app.use("/admin",adminBondsRoutes)
 //db connection
 connect
 //port
