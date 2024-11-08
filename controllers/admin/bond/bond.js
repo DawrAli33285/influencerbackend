@@ -1,7 +1,7 @@
 let bondModel=require('../../../models/user/sponsorBond');
 const sponsorMissionModel = require('../../../models/user/sponsorMission');
 const transactionModel = require('../../../models/user/transaction');
-
+const issuerModel=require('../../../models/user/issuer')
 
 module.exports.getBonds=async(req,res)=>{
     try{
@@ -76,16 +76,49 @@ let bond=await bondModel.findOne({_id:id}).populate({
 
 let mission=await sponsorMissionModel.findOne({bond_id:id})
 let transaction=await transactionModel.findOne({bond_id:id})
-
+let issuers=await issuerModel.find({}).populate('user_id')
 return res.status(200).json({
     bond,
     mission,
-    transaction
+    transaction,
+    issuers
 
 })
     }catch(e){
 return res.status(400).json({
     error:"Server error please try again"
 })
+    }
+}
+
+
+module.exports.updateBond=async(req,res)=>{
+    let {id}=req.params;
+    try{
+        let data = { ...req.body };
+
+        
+        let bond = await bondModel.findOneAndUpdate(
+            { _id: id },
+            { $set: data },
+            { new: true }
+        );
+      
+        let mission = await sponsorMissionModel.findOneAndUpdate(
+            { bond_id: id },
+            { $set: data },
+            { new: true }
+        );
+        
+        return res.status(200).json({
+            message: "Bond updated successfully",
+            bond,
+            mission
+        });
+        
+    }catch(e){
+        return res.status(400).json({
+            error:"Server error please try again"
+        })
     }
 }
