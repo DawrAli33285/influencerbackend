@@ -14,6 +14,10 @@ user_id:{
 no_of_bonds:{
 type:Number
 },
+bond_id:{
+type:mongoose.Schema.ObjectId,
+ref:'sponsor_bonds'
+},
 amount:{
     type:Number
 },

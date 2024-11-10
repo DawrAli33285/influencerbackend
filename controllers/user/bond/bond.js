@@ -6,6 +6,7 @@ const documentmodel = require('../../../models/user/documents')
 const missionModel=require('../../../models/user/sponsorMission')
 const sponsorMissionModel = require('../../../models/user/sponsorMission')
 const offersModel=require('../../../models/user/offers')
+const cancellationmodel = require('../../../models/user/cancellation')
 module.exports.bondListing=async(req,res)=>{
     try{
 let bondsList=await bondModel.find({issuer_id:req.issuerId})
@@ -162,8 +163,44 @@ if(issuer_id!=req.issuerId){
           message:"Offer accepted sucessfully"
         })
     }catch(e){
+        console.log(e.message)
         return res.status(400).json({
             error:"Server error please try again"
         })
     }
 }
+
+
+
+
+
+module.exports.cancellBond=async(req,res)=>{
+    let {...data}=req.body;
+    try{
+        data={
+            ...data,
+            buyer_id:req.buyer_id
+        }
+
+let pending=await cancellationmodel.findOne({bond_id:data.bond_id,buyer_id:req.buyer_id})
+if(pending){
+    return res.status(400).json({
+        error:"Cancellation request already pending"
+    })
+}
+
+
+
+await cancellationmodel.create(data)
+
+return res.status(200).json({
+message:"cancellation request sent sucessfully"
+})
+    }catch(e){
+        console.log(e.message)
+        return res.status(400).json({
+            error:"Server error please try again"
+        })
+    }
+}
+

@@ -50,9 +50,12 @@ module.exports.buyBondCard=async(req,res)=>{
         method_name:"STRIPE"
       })
       let buyer=await buyerModel.findOne({_id:req.buyer_id})
+      console.log("BOND_ID")
+      console.log(data.bond_id)
       await transactionModel.create({
         payment_method_id:paymentMethod?.id,
         no_of_bonds:data.no_of_bonds,
+        bond_id:data.bond_id,
         amount:data.amount,
         status:"SUCESS",
         user_id:buyer.user_id
@@ -134,6 +137,7 @@ let buyer=await buyerModel.findOne({_id:req.buyer_id})
       await transactionModel.create({
         payment_method_id:paymentMethod?.id,
         no_of_bonds:data.number_of_bonds,
+        bond_id:data.bond_id,
         amount:data.amount,
         status:"SUCESS",
         user_id:buyer.user_id
@@ -179,7 +183,7 @@ let buyer=await buyerModel.findOne({_id:req.buyer_id})
 module.exports.payForExchangeCard=async(req,res)=>{
 
     let {...data}=req.body;
-    console.log(data)
+
     try{
        
         // let oldbuyer=await buyerModel.findOne({_id:data.buyer_id})
@@ -211,6 +215,7 @@ module.exports.payForExchangeCard=async(req,res)=>{
       let buyer=await buyerModel.findOne({_id:req.buyer_id})
       await transactionModel.create({
         payment_method_id:paymentMethod?.id,
+        bond_id:data.bond_id,
         no_of_bonds:data.no_of_bonds,
         amount:data.amount,
         status:"SUCESS",
@@ -234,7 +239,7 @@ module.exports.payForExchangeCard=async(req,res)=>{
 
 module.exports.exchangePaypal=async(req,res)=>{
     let {...data}=req.body;
-   
+ 
        try{
            await bondModel.findOneAndUpdate({_id:data.bond_id},{$set:{
                status:"IN PROGRESS",
@@ -261,6 +266,7 @@ module.exports.exchangePaypal=async(req,res)=>{
            no_of_bonds:data.no_of_bonds,
            amount:data.amount,
            status:"SUCESS",
+           bond_id:data.bond_id,
            user_id:buyer.user_id
    
          })

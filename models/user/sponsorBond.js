@@ -44,7 +44,7 @@ required:true
 
     status:{
         type:String,
-        enum:['PENDING','REJECTED','APPROVED','COMPLETED','WAITING FOR EXCHANGE',"IN PROGRESS"],
+        enum:['PENDING','REJECTED','APPROVED','COMPLETED','WAITING FOR EXCHANGE',"IN PROGRESS","CANCELLED"],
         default:"PENDING"
     }
 },{timestamps:true})
