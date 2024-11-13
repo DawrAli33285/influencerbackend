@@ -36,7 +36,7 @@ module.exports.buyBondCard=async(req,res)=>{
                     status:"IN PROGRESS",
                     total_bonds: parseInt(bondfind.total_bonds) - parseInt(data.no_of_bonds),
                     bond_issuerance_amount:(bondfind.total_bonds-data.no_of_bonds)*bondfind.bond_price,
-                    status:"PENDING"
+                    status:"Approved"
                 }})
             }
      
@@ -52,15 +52,7 @@ module.exports.buyBondCard=async(req,res)=>{
       let buyer=await buyerModel.findOne({_id:req.buyer_id})
       console.log("BOND_ID")
       console.log(data.bond_id)
-      await transactionModel.create({
-        payment_method_id:paymentMethod?.id,
-        no_of_bonds:data.no_of_bonds,
-        bond_id:data.bond_id,
-        amount:data.amount,
-        status:"SUCESS",
-        user_id:buyer.user_id
-
-      })
+ 
       const { _id: bondfindId, ...bondfindWithoutId } = bondfind;
       const { _id: missionId, ...missionWithoutId } = mission;
       let bondData={
@@ -74,13 +66,22 @@ module.exports.buyBondCard=async(req,res)=>{
     }
 
 
- let newbond=   await bondModel.create(bondData)
+ let newbond=await bondModel.create(bondData)
  let missionData={
     ...missionWithoutId,
     bond_id:newbond._id
 
 }
 
+await transactionModel.create({
+    payment_method_id:paymentMethod?.id,
+    no_of_bonds:data.no_of_bonds,
+    bond_id:newbond._id,
+    amount:data.amount,
+    status:"SUCESS",
+    user_id:buyer.user_id
+
+  })
 await missionModel.create(missionData)
       return res.status(200).json({
         message:"SUCCESS"
@@ -117,7 +118,7 @@ await bondModel.deleteOne({_id:data.bond_id})
     await bondModel.findOneAndUpdate({_id:data.bond_id},{$set:{
         status:"IN PROGRESS",
         total_bonds: parseInt(bondfind.total_bonds) - parseInt(data.number_of_bonds),
-        status:"PENDING",
+        status:"Approved",
         bond_issuerance_amount:(bondfind.total_bonds-data.number_of_bonds)*bondfind.bond_price
     }})
 }
@@ -134,15 +135,7 @@ await bondModel.deleteOne({_id:data.bond_id})
       })
 let buyer=await buyerModel.findOne({_id:req.buyer_id})
 
-      await transactionModel.create({
-        payment_method_id:paymentMethod?.id,
-        no_of_bonds:data.number_of_bonds,
-        bond_id:data.bond_id,
-        amount:data.amount,
-        status:"SUCESS",
-        user_id:buyer.user_id
 
-      })
         
       const { _id: bondfindId, ...bondfindWithoutId } = bondfind;
       const { _id: missionId, ...missionWithoutId } = mission;
@@ -159,6 +152,18 @@ let buyer=await buyerModel.findOne({_id:req.buyer_id})
     ...missionWithoutId,
     bond_id:newbond._id
   }
+
+
+  await transactionModel.create({
+    payment_method_id:paymentMethod?.id,
+    no_of_bonds:data.number_of_bonds,
+    bond_id:newbond._id,
+    amount:data.amount,
+    status:"SUCESS",
+    user_id:buyer.user_id
+
+  })
+
   await missionModel.create(missiondata) 
 
         return res.status(200).json({

@@ -15,6 +15,8 @@ const bondsRoutes=require('./routes/buyer/bonds/bonds')
 const buyerPaymentRoutes=require('./routes/buyer/payment/payment')
 const adminUserRoutes=require('./routes/admin/user/user')
 const adminBondsRoutes=require('./routes/admin/bond/bond')
+const adminDashboardRoutes=require('./routes/admin/dashboard/dashboard')
+const adminTransactionRoutes=require('./routes/admin/transaction/transaction')
 //middlewares
 env.config()
 app.use(cors({
@@ -42,6 +44,8 @@ app.use(bondsRoutes)
 app.use(buyerPaymentRoutes)
 app.use("/admin",adminUserRoutes)
 app.use("/admin",adminBondsRoutes)
+app.use('/admin',adminTransactionRoutes)
+app.use('/admin',adminDashboardRoutes)
 //db connection
 connect
 //port

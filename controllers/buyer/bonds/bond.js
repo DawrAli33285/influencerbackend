@@ -62,7 +62,7 @@ module.exports.getBonds = async (req, res) => {
 
 module.exports.getBoughtBonds=async(req,res)=>{
     try{
-let bond=await bondModel.find({buyer_id:req.buyer_id,status:{$ne:"WAITING FOR EXCHANGE"}})
+let bond=await bondModel.find({buyer_id:req.buyer_id,status:{$nin:["WAITING FOR EXCHANGE","CANCELLED"]}})
 return res.status(200).json({
     bond
 })

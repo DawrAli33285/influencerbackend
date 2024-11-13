@@ -3,6 +3,9 @@ const fs=require('fs')
 const path=require('path')
 const filemodel=require('../../../models/user/fileObject')
 const documentmodel=require('../../../models/user/documents')
+const issuermodel = require('../../../models/user/issuer')
+const buyermodel = require('../../../models/user/buyer')
+const eeClient = require('elasticemail-webapiclient').client;
 module.exports.getUsers=async(req,res)=>{
 try{
 
@@ -22,6 +25,8 @@ module.exports.deleteUser=async(req,res)=>{
     let {id}=req.params;
     try{
 await userModel.deleteOne({_id:id})
+await issuermodel.deleteOne({user_id:id})
+await buyermodel.deleteOne({user_id:id})
 return res.status(200).json({
 message:"User deleted sucessfully"    
 })
@@ -48,76 +53,172 @@ return res.status(200).json({
 }
 }
 
-module.exports.editUser=async(req,res)=>{
-let {email}=req.params;
-let {...data}=req.body;
-    try{
-let userFound=await userModel.findOne({email})
-let [emailFound,mobileFound,userNameFound]=await Promise.all([
-    userModel.findOne({ email: data.email, _id: { $ne: userFound._id } }), 
-    userModel.findOne({mobile_number:data.mobile_number,_id:{$ne:userFound._id}}),
-    userModel.findOne({username:data.username,_id:{$ne:userFound._id}})
-])
-console.log(emailFound)
-console.log(mobileFound)
-console.log(userNameFound)
-if(userNameFound){
-return res.status(400).json({
-    error:"Username already taken"
-})
-}
-if(emailFound){
-return res.status(400).json({
-    error:"Email already taken"
-})
-}
-if(mobileFound){
-    return res.status(400).json({
-        error:"Mobile number taken"
-    })
-}
+module.exports.editUser = async (req, res) => {
+    const { email } = req.params;
+    let { ...data } = req.body;
 
-let bondPhotosFolder = "avatar";
+    try {
+       
+        let userFound = await userModel.findOne({ email });
+        let [emailFound, mobileFound, userNameFound] = await Promise.all([
+            userModel.findOne({ email: data.email, _id: { $ne: userFound._id } }),
+            userModel.findOne({ mobile_number: data.mobile_number, _id: { $ne: userFound._id } }),
+            userModel.findOne({ username: data.username, _id: { $ne: userFound._id } })
+        ]);
 
+        if (userNameFound) {
+            return res.status(400).json({ error: "Username already taken" });
+        }
+        if (emailFound) {
+            return res.status(400).json({ error: "Email already taken" });
+        }
+        if (mobileFound) {
+            return res.status(400).json({ error: "Mobile number taken" });
+        }
 
+       
+        const bondPhotosFolder = "avatar";
+        const bondPhotosDir = path.resolve(__dirname, '../../../', bondPhotosFolder);
+        if (!fs.existsSync(bondPhotosDir)) {
+            fs.mkdirSync(bondPhotosDir, { recursive: true });
+        }
 
-const bondPhotosDir = path.resolve(__dirname,'../../../', bondPhotosFolder); 
-let exists=fs.existsSync(bondPhotosDir)
+      
+        if (req.files && req.files.length > 0) {
+           
+            const latestFile = req.files[req.files.length - 1];
+            const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}_${latestFile.originalname}`;
+            const bondPhotosPath = path.join(bondPhotosDir, fileName);
 
+           
+            fs.writeFileSync(bondPhotosPath, latestFile.buffer);
 
-if(!exists){
-   let created=fs.mkdirSync(bondPhotosDir, { recursive: true });
+            
+            let fileRecord = await filemodel.create({
+                file_path: bondPhotosPath,
+                folder_name: bondPhotosFolder
+            });
+            await documentmodel.create({
+                file_path_id: fileRecord._id
+            });
 
-}
+       
+            data = {
+                ...data,
+                avatar: `http://localhost:5000/avatar/${fileName}`
+            };
+        }
 
-let file=req.file
-let fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}_${file.originalname}`;
+      
+        let user = await userModel.findOneAndUpdate({ email }, { $set: data }, { new: true });
+        return res.status(200).json({
+            message: "User edited successfully",
+            user
+        });
+    } catch (e) {
+        console.error(e.message);
+        return res.status(400).json({
+            error: "Server error, please try again"
+        });
+    }
+};
+
+module.exports.sendReply = async (req, res) => {
+    let { ...data } = req.body;
+    console.log(data);
   
-let bondPhotosPath = path.join(bondPhotosDir, fileName);
-fs.writeFileSync(bondPhotosPath, file.buffer);
-let fileRecord = await filemodel.create({
-    file_path: bondPhotosPath,
-    folder_name: bondPhotosFolder
-});
-await documentmodel.create({
-    file_path_id: fileRecord._id
-});
+    try {
+     
+      const options = {
+        apiKey: process.env.ELASTIC_API_KEY,
+        apiUri: 'https://api.elasticemail.com/',
+        apiVersion: 'v2'
+      };
+  
+      const EE = new eeClient(options);
+  
+      
+     if(data?.messageId){
+        const messageId = `<${data.messageId.replace(/\s+/g, '')}>`;
+        const emailParams = {
+            subject: data.subject,
+            to: data.to,
+            from: process.env.EMAIL,
+            replyTo: data.to,
+            headers: JSON.stringify({
+              "In-Reply-To": messageId,
+              "References": messageId
+            }),
+            bodyText: data.description,  
+            fromName: 'Sponsor Bond',
+            bodyType: 'Plain'
+          };
+      
+         
+          await EE.Email.Send(emailParams);
+      
+     }else{
+        const emailParams = {
+            subject: data.subject,
+            to: data.to,
+            from: process.env.EMAIL,
+            replyTo: data.to,
+            bodyText: data.description,  
+            fromName: 'Sponsor Bond',
+            bodyType: 'Plain'
+          };
+      
+         
+          await EE.Email.Send(emailParams);
+      
+     }
+      return res.status(200).json({
+        message: "Reply sent successfully"
+      });
+    } catch (e) {
+      console.error("Error:", e);
+      return res.status(400).json({
+        error: "Server error, please try again"
+      });
+    }
+  };
+  
 
-let avatar=`http://localhost:5000/avatar/${fileName}`
-data={
-    ...data,
-    avatar
-}
 
-let user=await userModel.findOneAndUpdate({ email }, { $set: data }, { new: true });
-return res.status(200).json({
-    message:"User edited sucessfully",
-    user
-})
+
+
+
+  module.exports.sendEmail=async(req,res)=>{
+    let {...data}=req.body;
+    try{
+
+
+        const options = {
+            apiKey: process.env.ELASTIC_API_KEY,
+            apiUri: 'https://api.elasticemail.com/',
+            apiVersion: 'v2'
+          };
+      
+          const EE = new eeClient(options);
+
+          const emailParams = {
+            subject: data.subject,
+            to: data.to,
+            from: process.env.EMAIL,
+            replyTo: data.to,
+            bodyText: data.description,  
+            fromName: 'Sponsor Bond',
+            bodyType: 'Plain'
+          };
+
+          await EE.Email.Send(emailParams);
+
+        return res.status(200).json({
+            message:"Email sent sucessfully"
+        })
     }catch(e){
-        console.log(e.message)
         return res.status(400).json({
             error:"Server error please try again"
         })
     }
-}
+  }

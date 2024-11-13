@@ -1,5 +1,5 @@
 const router=require('express').Router();
-const {getBonds,updateBond,cancelBond,rejectCancellation,getCancellations,getSingleCancellation,approveCancellationStatus,getBond,updateStatus,deleteBond}=require('../../../controllers/admin/bond/bond')
+const {getBonds,updateBond,cancelBond,rejectBond,rejectCancellation,getCancellations,getSingleCancellation,approveCancellationStatus,getBond,updateStatus,deleteBond}=require('../../../controllers/admin/bond/bond')
 
 router.get('/get-bonds',getBonds)
 router.delete('/deleteBond/:id',deleteBond)
@@ -11,4 +11,5 @@ router.get('/getSingleCancellation/:id',getSingleCancellation)
 router.get('/approveCancellationStatus/:id',approveCancellationStatus)
 router.get('/cancelBond/:id',cancelBond)
 router.get('/rejectCancellation/:id',rejectCancellation)
+router.post('/rejectBond',rejectBond)
 module.exports=router;

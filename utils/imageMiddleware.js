@@ -2,8 +2,7 @@ const multer=require('multer')
 
 const multerStorage=multer.memoryStorage();
 const fileFilter =(req,file,cb)=>{
-  console.log("HI dawar")
-    console.log(file)
+ 
     if(file.mimetype.startsWith('image')){
         return cb(null,true)
     }else{

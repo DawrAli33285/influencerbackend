@@ -9,17 +9,34 @@ const eeClient = require('elasticemail-webapiclient').client;
 
 module.exports.getBonds=async(req,res)=>{
     try{
-        let bonds = await bondModel.find({}).populate({
-            path: "issuer_id", 
-            populate: {
-                path: "user_id", 
-                model: "user" 
-            }
-        });
-        
+ 
+let bonds = await bondModel.find({ status: 'PENDING' }).populate({
+    path: "issuer_id",
+    populate: {
+        path: "user_id",
+        model: "user"
+    }
+});
+
+
+const bondIds = bonds.map(bond => bond._id);
+
+
+let missions = await sponsorMissionModel.find({ bond_id: { $in: bondIds } });
+
+
+const bondIdsWithMissions = new Set(missions.map(mission => mission.bond_id.toString()));
+
+
+const bondsWithMissions = bonds.filter(bond => bondIdsWithMissions.has(bond._id.toString()));
+
+
 return res.status(200).json({
-    bonds
-})
+    bonds: bondsWithMissions
+});
+
+
+     
     }catch(e){
         console.log(e.message)
 return res.status(400).json({
@@ -35,7 +52,10 @@ module.exports.deleteBond=async(req,res)=>{
     try{
 await Promise.all([
     bondModel.deleteOne({_id:id}),
-  sponsorMissionModel.deleteOne({bond_id:id})
+  sponsorMissionModel.deleteOne({bond_id:id}),
+  transactionModel.updateMany({bond_id:id},{$set:{
+    status:"REJECTED"
+  }})
 ])
 
 
@@ -364,6 +384,76 @@ return res.status(200).json({
     }catch(e){
         
         console.log(e.message)
+        return res.status(400).json({
+            error:"Server error please try again"
+        })
+    }
+}
+
+
+
+
+module.exports.rejectBond=async(req,res)=>{
+    let {...data}=req.body;
+
+    try{
+        await bondModel.updateOne({_id:data.bond_id},{$set:{
+            status:"REJECTED"
+        }})
+        
+await sponsorMissionModel.updateOne({bond_id:data.bond_id},{$set:{
+    status:data.status
+}})
+
+const options = {
+    apiKey: process.env.ELASTIC_API_KEY,
+    apiUri: 'https://api.elasticemail.com/',
+    apiVersion: 'v2'
+}
+
+
+
+const EE = new eeClient(options);
+     
+    EE.Account.Load().then(function(resp) {
+        
+    });
+    
+    const emailParams = {
+        "subject": `Rejection Request for Your Bond:${data?.title}`,
+        "to": `${data.email}`,
+        "from": process.env.EMAIL,
+        "body": `
+       The bond has been rejected and is not purchasable
+
+        If you have any questions or require further clarification, please feel free to log in to your account or contact our support team for assistance.
+    
+        We apologize for any inconvenience caused and appreciate your understanding.
+    
+        Thank you for using our platform!
+    
+        Best regards,
+        Sponsor Bond Team
+        `,
+        "fromName": 'Sponsor Bond',
+        "bodyType": 'Plain'
+    };
+
+
+
+    EE.Email.Send(emailParams)
+    .catch((err) => {
+        return res.status(400).json({
+            error:"Error sending email please try again"
+        })
+    });
+
+return res.status(200).json({
+    message:"Sponsor bond rejected sucessfully"
+})
+
+
+    }catch(e){
         return res.status(400).json({
             error:"Server error please try again"
         })

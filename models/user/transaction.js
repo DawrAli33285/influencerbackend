@@ -23,7 +23,7 @@ amount:{
 },
 status:{
     type:String,
-    enum:['SUCESS','FAILED']
+    enum:['SUCESS','FAILED','REJECTED']
 },
 
 },{

@@ -101,7 +101,8 @@ module.exports.getSingleBond=async(req,res)=>{
     try{
        
 let bond=await bondModel.findOne({_id:bond_id})
-
+console.log(bond_id)
+console.log(bond)
 let mission=await missionModel.findOne({bond_id})
 let offer=await offersModel.findOne({bond_id:bond._id})
 
