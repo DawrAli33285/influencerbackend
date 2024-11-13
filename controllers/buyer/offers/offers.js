@@ -166,6 +166,7 @@ module.exports.getOffers=async(req,res)=>{
         status: { $ne: 'ACCEPTED' },
         rejectedBY: { $nin: [req.buyer_id] } 
     }).populate('bond_id');
+    console.log("OFFERS")
     
 console.log(offers)
  return res.status(200).json({

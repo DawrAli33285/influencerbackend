@@ -7,6 +7,7 @@ const missionModel=require('../../../models/user/sponsorMission')
 const sponsorMissionModel = require('../../../models/user/sponsorMission')
 const offersModel=require('../../../models/user/offers')
 const cancellationmodel = require('../../../models/user/cancellation')
+let buyerOfferModel=require('../../../models/user/buyerOffer')
 module.exports.bondListing=async(req,res)=>{
     try{
 let bondsList=await bondModel.find({issuer_id:req.issuerId})
@@ -105,7 +106,9 @@ console.log(bond_id)
 console.log(bond)
 let mission=await missionModel.findOne({bond_id})
 let offer=await offersModel.findOne({bond_id:bond._id})
-
+if(!offer){
+    offer=await buyerOfferModel.findOne({bond_id:bond._id})
+}
 
 return res.status(200).json({
     bond,
@@ -123,7 +126,7 @@ return res.status(200).json({
 
 
 module.exports.rejectOffer=async(req,res)=>{
-    let {bond_id,issuer_id}=req.params;
+    let {bond_id,issuer_id,offerId}=req.params;
 
     if(issuer_id!=req.issuerId){
         return res.status(400).json({
@@ -136,6 +139,7 @@ module.exports.rejectOffer=async(req,res)=>{
        
 let bond=await bondModel.updateOne({_id:bond_id},{status:"PENDING"},{new:true})
 let offer=await offersModel.deleteOne({bond_id})
+await buyerOfferModel.deleteMany({bond_id:bond_id,_id:{$ne:offerId}})
 return res.status(200).json({
   message:"Offer rejected sucessfully"
 })
@@ -149,7 +153,7 @@ return res.status(200).json({
 
 
 module.exports.acceptOffer=async(req,res)=>{
-    let {bond_id,issuer_id}=req.params;
+    let {bond_id,issuer_id,offerId}=req.params;
 
 if(issuer_id!=req.issuerId){
     return res.status(400).json({
@@ -160,6 +164,7 @@ if(issuer_id!=req.issuerId){
     try{
         let bond=await bondModel.updateOne({_id:bond_id},{status:"AWAITING FOR PAYMENT"},{new:true})
         let offer=await offersModel.updateOne({bond_id},{status:"ACCEPTED"})
+        await buyerOfferModel.deleteMany({bond_id:bond_id,_id:{$ne:offerId}})
         return res.status(200).json({
           message:"Offer accepted sucessfully"
         })

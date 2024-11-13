@@ -124,7 +124,11 @@ module.exports.socialLogin=async(req,res)=>{
     let {email}=req.body;
     try{
 let userFound=await userModel.findOne({email}).populate('country_code_id')
-
+if(!userFound){
+return res.status(400).json({
+    error:"User not found"
+})
+}
 
    
 

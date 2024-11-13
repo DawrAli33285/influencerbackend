@@ -95,7 +95,7 @@ try{
 let newbond=await bondModel.create({
 bond_price:data.bond_price,
 total_bonds:data.total_bonds,
-status:"WAITING FOR EXCHANGE",
+status:"IN PROGRESS",
 buyer_id:req.buyer_id,
 bond_issuerance_amount:data.bond_issuerance_amount,
 title:bond.title,
@@ -131,7 +131,7 @@ await bondModel.deleteOne({_id:data.bond_id})
       let newbond=await bondModel.create({
         bond_price:data.bond_price,
         total_bonds:data.total_bonds,
-        status:"WAITING FOR EXCHANGE",
+        status:"IN PROGRESS",
         buyer_id:req.buyer_id,
         bond_issuerance_amount:data.bond_issuerance_amount,
         title:bond.title,
